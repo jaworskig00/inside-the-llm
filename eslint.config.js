@@ -16,6 +16,11 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    // The cross-origin isolation worker runs in a ServiceWorkerGlobalScope.
+    files: ['public/*.js'],
+    languageOptions: { globals: globals.serviceworker },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2023,

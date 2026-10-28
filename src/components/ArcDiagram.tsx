@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useElementWidth } from '../hooks/useElementWidth';
 import { scalePoint, select } from 'd3';
 import type { AttentionPack, TokenInfo } from '../lib/protocol';
 import { arcLinks, attentionRow, averageHeadsRow, maxOf } from '../lib/attention';
@@ -29,7 +30,7 @@ const DURATION = 320;
  * legible instead of a jump cut.
  */
 export function ArcDiagram({ pack, tokens, layer, head, query, onSelectToken }: ArcDiagramProps) {
-  const ref = useRef<SVGSVGElement | null>(null);
+  const { ref, element: svgElement, width: containerWidth } = useElementWidth<SVGSVGElement>();
   // Held in a ref so a new inline callback from the parent does not re-run the whole draw.
   const onSelectRef = useRef(onSelectToken);
   useEffect(() => {
@@ -37,7 +38,7 @@ export function ArcDiagram({ pack, tokens, layer, head, query, onSelectToken }: 
   }, [onSelectToken]);
 
   useEffect(() => {
-    const svg = ref.current;
+    const svg = svgElement;
     if (!svg) return;
 
     const count = Math.min(pack.tokens, tokens.length);
@@ -163,7 +164,7 @@ export function ArcDiagram({ pack, tokens, layer, head, query, onSelectToken }: 
         );
       })
       .on('click', (_event, d) => onSelectRef.current(d));
-  }, [pack, tokens, layer, head, query]);
+  }, [pack, tokens, layer, head, query, containerWidth, svgElement]);
 
   return (
     <svg

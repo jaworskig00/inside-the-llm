@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { bytes, displayToken, fixed, ms, percent, plainToken } from '../src/lib/format';
+import {
+  bytes,
+  decodeToken,
+  decodeTokens,
+  displayToken,
+  fixed,
+  ms,
+  percent,
+} from '../src/lib/format';
 import { decodeAttention, encodeAttention } from '../src/worker/fixture';
 import { clamp01, contrastInk, tokenColor } from '../src/lib/color';
 
@@ -12,9 +20,25 @@ describe('token display', () => {
     expect(displayToken('the')).toBe('the');
   });
 
-  it('turns the same markers back into real whitespace for the output readout', () => {
-    expect(plainToken('Ġthe')).toBe(' the');
-    expect(plainToken('Ċ')).toBe('\n');
+  it('decodes a run of vocabulary entries back into the text they encode', () => {
+    expect(decodeTokens(['Ġthe'])).toBe(' the');
+    expect(decodeTokens(['Ċ'])).toBe('\n');
+    expect(decodeTokens(['Hello', 'Ġworld'])).toBe('Hello world');
+    expect(decodeTokens([])).toBe('');
+  });
+
+  // The whole reason this exists: "ó" is two UTF-8 bytes, and the vocabulary stores each
+  // byte as its own printable character. Joining the raw strings would print mojibake.
+  it('reassembles multi-byte characters that are split across tokens', () => {
+    const polish = ['ĠZa', 'Å', '¼', 'Ã³', 'Å', 'ĤÄ', 'ĩ'];
+    expect(decodeTokens(polish)).toBe(' Zażółć');
+    expect(decodeTokens(['Ã', '©'])).toBe('é');
+    expect(decodeTokens(['ðŁĺ', 'Ģ'])).toBe('😀');
+  });
+
+  it('gives a replacement character for half of a multi-byte sequence, not a crash', () => {
+    expect(decodeToken('Ã')).toBe('\ufffd');
+    expect(decodeToken('Ġthe')).toBe(' the');
   });
 });
 

@@ -37,7 +37,12 @@ export function PlaybackControls() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+
+      // Space already activates whatever control has focus. Stealing it here as well made
+      // one key press do two things - activate the button and toggle playback - so the
+      // shortcut only applies when focus is not on something that handles the key itself.
+      if (event.key === ' ' && target?.closest('button, a, [role="button"], [tabindex]')) return;
 
       if (event.key === 'ArrowLeft') {
         event.preventDefault();

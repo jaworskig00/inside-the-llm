@@ -117,6 +117,55 @@ test('the alternatives tree expands lazily', async ({ page }) => {
   await expect(panel.locator('g.node')).toHaveCount(6, { timeout: 15_000 });
 });
 
+// Regression: space already activates a focused control, so taking it for playback as well
+// made one key press do two things.
+test('space does not hijack a focused button', async ({ page }) => {
+  await generate(page);
+
+  const layerTwo = page
+    .getByRole('group', { name: 'Layer' })
+    .getByRole('button', { name: '2', exact: true });
+  await layerTwo.focus();
+  await page.keyboard.press(' ');
+
+  await expect(layerTwo).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: /Pause playback/ })).toHaveCount(0);
+
+  // It still works when focus is not on a control.
+  await page.locator('body').click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press(' ');
+  await expect(page.getByRole('button', { name: /Pause playback/ })).toBeVisible();
+});
+
+// Regression: the charts wrote their width into the viewBox at draw time and never redrew,
+// so after a resize the browser stretched stale geometry instead of re-laying it out.
+test('charts redraw at the size they are displayed at after a resize', async ({ page }) => {
+  await generate(page);
+  await page.setViewportSize({ width: 1100, height: 900 });
+
+  const labels = [
+    'Next-token probabilities',
+    'Logit lens flow across layers',
+    /Attention arcs from token/,
+  ];
+
+  for (const label of labels) {
+    const svg = page.getByRole('img', { name: label });
+    await expect
+      .poll(
+        async () => {
+          const box = await svg.evaluate((node) => ({
+            viewBox: Number(node.getAttribute('viewBox')?.split(' ')[2] ?? 0),
+            width: node.getBoundingClientRect().width,
+          }));
+          return Math.abs(box.viewBox - box.width);
+        },
+        { timeout: 10_000 },
+      )
+      .toBeLessThan(24);
+  }
+});
+
 test('explain mode can be turned off', async ({ page }) => {
   await page.goto(DEMO);
   const caption = page.getByText('The model does not see letters');

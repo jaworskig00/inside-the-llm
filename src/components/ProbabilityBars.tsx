@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useElementWidth } from '../hooks/useElementWidth';
 import { scaleLinear, select } from 'd3';
 import type { Candidate } from '../lib/protocol';
 import { displayToken, percent } from '../lib/format';
@@ -42,7 +43,7 @@ export function ProbabilityBars({
   rows = 12,
   onPick,
 }: ProbabilityBarsProps) {
-  const ref = useRef<SVGSVGElement | null>(null);
+  const { ref, element: svgElement, width: containerWidth } = useElementWidth<SVGSVGElement>();
   // Held in a ref so a new inline callback from the parent does not re-run the whole draw.
   const onPickRef = useRef(onPick);
   useEffect(() => {
@@ -50,7 +51,7 @@ export function ProbabilityBars({
   }, [onPick]);
 
   useEffect(() => {
-    const svg = ref.current;
+    const svg = svgElement;
     if (!svg) return;
 
     const shapedById = new Map(shaped.map((c) => [c.id, c.prob]));
@@ -169,7 +170,7 @@ export function ProbabilityBars({
       .text(
         (d) => `id ${d.id} · model ${percent(d.raw, 2)} · after sampling ${percent(d.shaped, 2)}`,
       );
-  }, [raw, shaped, chosenId, rows]);
+  }, [raw, shaped, chosenId, rows, containerWidth, svgElement]);
 
   return <svg ref={ref} className="w-full" role="img" aria-label="Next-token probabilities" />;
 }

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Panel, Empty, Stat } from './Panel';
 import { useRunStore } from '../store/useRunStore';
-import { displayToken, percent, plainToken } from '../lib/format';
+import { decodeToken, decodeTokens, displayToken, percent } from '../lib/format';
 import { contrastInk, probabilityColor, clamp01 } from '../lib/color';
 
 /**
@@ -27,12 +27,9 @@ export function TokenStrip() {
     return map;
   }, [steps]);
 
+  // Decoded as one run, not token by token: a token is often half a multi-byte character.
   const generated = useMemo(
-    () =>
-      tokens
-        .filter((token) => token.source === 'generated')
-        .map((t) => plainToken(t.text))
-        .join(''),
+    () => decodeTokens(tokens.filter((token) => token.source === 'generated').map((t) => t.text)),
     [tokens],
   );
 
@@ -81,7 +78,7 @@ export function TokenStrip() {
                     borderStyle: isGenerated ? 'solid' : 'dashed',
                     borderColor: isSelected ? undefined : 'rgba(255,255,255,0.12)',
                   }}
-                  title={`#${token.index} · id ${token.id} · ${
+                  title={`#${token.index} · id ${token.id} · "${decodeToken(token.text)}" · ${
                     token.prob === null
                       ? 'first token (no context)'
                       : `p = ${percent(token.prob, 2)}`

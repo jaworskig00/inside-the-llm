@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
+import { useElementWidth } from '../hooks/useElementWidth';
 import { hierarchy, linkHorizontal, select, tree as d3tree } from 'd3';
 import type { HierarchyPointLink, HierarchyPointNode } from 'd3';
 import { Panel, Empty, Stat } from './Panel';
@@ -29,12 +30,20 @@ const DURATION = 360;
  * The branch the model actually walked is highlighted, and "fork" re-runs generation from
  * any node, which is the most direct way to feel how much one token choice changes.
  */
+function atDepthLimit(node: TreeNode): boolean {
+  return node.path.length >= LIMITS.treeMaxDepth;
+}
+
 export function AlternativesTree({ onExpand, onFork }: AlternativesTreeProps) {
   const treeData = useRunStore((state) => state.tree);
   const tokens = useRunStore((state) => state.tokens);
   const running = useRunStore((state) => state.running);
   const collapseNode = useRunStore((state) => state.collapseNode);
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  const {
+    ref: svgRef,
+    element: svgElement,
+    width: containerWidth,
+  } = useElementWidth<SVGSVGElement>();
 
   // Held in a ref so a new inline callback from the parent does not re-run the whole draw.
   const handlers = useRef({ onExpand, onFork, collapseNode });
@@ -47,7 +56,7 @@ export function AlternativesTree({ onExpand, onFork }: AlternativesTreeProps) {
   const hasRun = tokens.length > 0;
 
   useEffect(() => {
-    const svg = svgRef.current;
+    const svg = svgElement;
     if (!svg || !hasRun) return;
 
     // nodeSize rather than size: the tree grows to fit its content instead of being
@@ -146,7 +155,9 @@ export function AlternativesTree({ onExpand, onFork }: AlternativesTreeProps) {
                 : 'var(--color-accent)',
           )
           .attr('r', (d) => (d.data.depth === 0 ? 5 : 4))
-          .style('cursor', 'pointer');
+          // A node at the depth limit cannot be opened, so it does not pretend it can.
+          .attr('opacity', (d) => (atDepthLimit(d.data) ? 0.45 : 1))
+          .style('cursor', (d) => (atDepthLimit(d.data) ? 'default' : 'pointer'));
 
         selection
           .select('text.token')
@@ -173,7 +184,11 @@ export function AlternativesTree({ onExpand, onFork }: AlternativesTreeProps) {
               ? 'Click to see the first alternatives'
               : `${displayToken(d.data.text)} — ${percent(d.data.prob)} at this point, ${percent(
                   d.data.cumulative,
-                )} for the whole path. Click to expand, shift-click to fork the run from here.`,
+                )} for the whole path. ${
+                  atDepthLimit(d.data)
+                    ? `This is as deep as the tree goes (${LIMITS.treeMaxDepth} levels).`
+                    : 'Click to expand,'
+                } shift-click to fork the run from here.`,
           );
 
         selection.on('click', (event: MouseEvent, d) => {
@@ -185,7 +200,7 @@ export function AlternativesTree({ onExpand, onFork }: AlternativesTreeProps) {
           else if (d.data.status === 'collapsed') handlers.current.onExpand(d.data.path);
         });
       });
-  }, [root, hasRun]);
+  }, [root, hasRun, containerWidth, svgElement]);
 
   return (
     <Panel

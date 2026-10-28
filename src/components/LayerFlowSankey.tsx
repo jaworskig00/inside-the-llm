@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useElementWidth } from '../hooks/useElementWidth';
 import { select } from 'd3';
 import { sankey, sankeyLeft, sankeyLinkHorizontal } from 'd3-sankey';
 import type { SankeyGraph, SankeyNode, SankeyLink } from 'd3-sankey';
@@ -25,7 +26,11 @@ const DURATION = 420;
  */
 export function LayerFlowSankey() {
   const step = useRunStore(selectCurrentStep);
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  const {
+    ref: svgRef,
+    element: svgElement,
+    width: containerWidth,
+  } = useElementWidth<SVGSVGElement>();
 
   const data = useMemo(
     () => (step ? buildLensSankey(step.lens, { maxCandidates: 5 }) : null),
@@ -33,7 +38,7 @@ export function LayerFlowSankey() {
   );
 
   useEffect(() => {
-    const svg = svgRef.current;
+    const svg = svgElement;
     if (!svg || !data || data.nodes.length === 0) return;
 
     const width = Math.max(360, svg.clientWidth || 560);
@@ -165,7 +170,7 @@ export function LayerFlowSankey() {
         return ((node?.x0 ?? 0) + (node?.x1 ?? 0)) / 2 || 0;
       })
       .text((d) => (d === 0 ? 'embed' : `L${d}`));
-  }, [data]);
+  }, [data, containerWidth, svgElement]);
 
   if (!step || !data || data.nodes.length === 0) {
     return (
