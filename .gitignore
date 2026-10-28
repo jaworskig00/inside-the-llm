@@ -44,3 +44,6 @@ public/ort/
 # local copy of the exported weights, served by the dev middleware
 .devmodel/
 docs/.frames/
+
+# local dev-server config
+.claude/
