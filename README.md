@@ -224,7 +224,15 @@ which is exactly what GitHub Releases do not.
 
 **The app.** [`deploy.yml`](.github/workflows/deploy.yml) builds with
 `VITE_BASE=/<repo>/` and pushes `dist/` to GitHub Pages, then fetches the published URL and
-fails the run if it does not come back with the app. To move to Cloudflare Pages, Netlify or
+fails the run if it does not come back with the app. Pages itself has to be switched on
+once before the first deploy — the default `GITHUB_TOKEN` is not allowed to create the
+site:
+
+```bash
+gh api -X POST repos/OWNER/REPO/pages -f build_type=workflow
+```
+
+To move to Cloudflare Pages, Netlify or
 a server of your own: build with `VITE_BASE=/`, publish `dist/`, and keep
 [`public/_headers`](public/_headers) — those hosts honour it, and cross-origin isolation
 turns the WASM path into the fast one.
