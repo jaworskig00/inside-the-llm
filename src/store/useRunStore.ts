@@ -48,6 +48,8 @@ export interface RunState {
   error: string | null;
   fatal: boolean;
   demoMode: boolean;
+  /** Whether this browser exposes a WebGPU adapter at all. Decides what the gate warns about. */
+  gpuAvailable: boolean;
 
   prompt: string;
   maxNewTokens: number;
@@ -101,8 +103,9 @@ export const useRunStore = create<RunState>((set, get) => ({
   error: null,
   fatal: false,
   demoMode: false,
+  gpuAvailable: typeof navigator !== 'undefined' && 'gpu' in navigator,
 
-  prompt: 'The capital of France is',
+  prompt: 'The lighthouse keeper had not spoken to anyone in',
   maxNewTokens: LIMITS.defaultNewTokens,
   sampling: { ...DEFAULT_SAMPLING },
 

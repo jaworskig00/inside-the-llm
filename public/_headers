@@ -1,0 +1,12 @@
+# Cross-origin isolation.
+#
+# With these two headers the page gets SharedArrayBuffer, which lets onnxruntime-web run
+# multi-threaded WASM. Measured on an M-series Mac: threaded WASM starts in under a second
+# and generates at ~27 tok/s, while the single-threaded fallback needs minutes just to build
+# the session. See DECISIONS.md.
+#
+# Netlify and Cloudflare Pages read this file. GitHub Pages serves static files only and
+# ignores it, which is why the deployed build leans on WebGPU - see README, "Hosting".
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless

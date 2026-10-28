@@ -136,9 +136,13 @@ export class Engine {
   }
 
   /** Creates the session on WebGPU when the adapter allows it, otherwise on WASM. */
-  async createSession(weights: ArrayBuffer, ortBase: string): Promise<Backend> {
+  async createSession(
+    weights: ArrayBuffer,
+    ortBase: string,
+    forceBackend?: Backend,
+  ): Promise<Backend> {
     const prefix = ortBase.endsWith('/') ? ortBase : `${ortBase}/`;
-    const useWebgpu = await webgpuAvailable();
+    const useWebgpu = forceBackend === 'wasm' ? false : await webgpuAvailable();
 
     // Loaded as a plain URL so the bundler never sees - and never copies - ORT's WASM set.
     // The WebGPU runtime is twice the size of the plain WASM one, so a machine without a

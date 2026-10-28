@@ -110,6 +110,8 @@ export type MainToWorker =
       metaUrl: string;
       ortBase: string;
       cacheKey: string;
+      /** `?backend=wasm` pins the CPU path, which is how the fallback gets verified. */
+      forceBackend?: Backend;
     }
   | {
       type: 'generate';

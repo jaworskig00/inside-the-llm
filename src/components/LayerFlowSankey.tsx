@@ -190,10 +190,10 @@ export function LayerFlowSankey() {
     >
       <svg ref={svgRef} className="w-full" role="img" aria-label="Logit lens flow across layers" />
       <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
-        Widths are shares of the five strongest candidates (together {percent(finalCoverage)} of
-        the real distribution at the output layer), renormalised per layer so every column sums
-        to one. A ribbon that runs flat is a candidate holding its mass; a ribbon that slopes
-        across is mass moving to a different word.
+        Widths are shares of the five strongest candidates (together {percent(finalCoverage)} of the
+        real distribution at the output layer), renormalised per layer so every column sums to one.
+        A ribbon that runs flat is a candidate holding its mass; a ribbon that slopes across is mass
+        moving to a different word.
       </p>
     </Panel>
   );

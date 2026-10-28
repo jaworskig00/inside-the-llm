@@ -15,8 +15,9 @@ interface ArcDiagramProps {
   onSelectToken: (index: number) => void;
 }
 
-const HEIGHT = 190;
-const MARGIN = { top: 16, right: 14, bottom: 46, left: 14 };
+const HEIGHT = 210;
+// bottom is generous because the token labels are rotated 55 degrees under the baseline.
+const MARGIN = { top: 16, right: 14, bottom: 68, left: 14 };
 const DURATION = 320;
 
 /**

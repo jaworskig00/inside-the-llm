@@ -38,7 +38,11 @@ export function ResidualStrip() {
       }
     }
     if (!Number.isFinite(lo) || lo <= 0) lo = 1;
-    return { color: scaleSequentialLog(interpolateMagma).domain([lo, Math.max(hi, lo * 1.01)]), max: hi, min: lo };
+    return {
+      color: scaleSequentialLog(interpolateMagma).domain([lo, Math.max(hi, lo * 1.01)]),
+      max: hi,
+      min: lo,
+    };
   }, [grid]);
 
   if (!grid || !color) {

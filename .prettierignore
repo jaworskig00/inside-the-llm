@@ -5,3 +5,6 @@ public/model
 e2e/fixtures
 playwright-report
 test-results
+public/demo-run.json
+public/ort
+docs/media

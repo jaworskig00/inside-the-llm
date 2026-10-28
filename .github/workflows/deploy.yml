@@ -1,0 +1,73 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One deployment at a time; a queued run supersedes the one waiting, but never cancels a
+# deployment already in flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # VITE_BASE must match where the site is served from. For GitHub Pages that is
+      # /<repo>/; for Cloudflare Pages, Netlify or your own server set it to "/".
+      # VITE_MODEL_URL points at the weights - see README "Hosting the model elsewhere".
+      - name: Build
+        run: npm run build
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      # A deploy that returns 200 but serves the wrong document is still a broken deploy.
+      - name: Verify the deployed page
+        run: |
+          url="${{ steps.deployment.outputs.page_url }}"
+          echo "checking $url"
+          for attempt in 1 2 3 4 5 6; do
+            code=$(curl -sL -o page.html -w '%{http_code}' "$url" || true)
+            if [ "$code" = "200" ] && grep -q "Inside the LLM" page.html; then
+              echo "live and serving the app"
+              exit 0
+            fi
+            echo "attempt $attempt: http $code, retrying in 15s"
+            sleep 15
+          done
+          echo "the deployed page never served the app"
+          exit 1

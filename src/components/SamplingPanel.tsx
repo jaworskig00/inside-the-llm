@@ -87,8 +87,7 @@ export function SamplingPanel({ onRescore }: SamplingPanelProps) {
             <p className="text-[11px] text-ink-faint">
               The model picked{' '}
               <span className="font-mono text-amber">{displayToken(step.chosen.text) || '␣'}</span>{' '}
-              at{' '}
-              {percent(step.chosen.prob, 2)}. Changing the dials here reshapes the chart but does
+              at {percent(step.chosen.prob, 2)}. Changing the dials here reshapes the chart but does
               not rewrite history — press Generate to sample a new run.
             </p>
           </>

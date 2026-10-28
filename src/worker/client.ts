@@ -61,6 +61,11 @@ export async function createWorker(): Promise<WorkerHandle> {
   return { worker, demoMode: false };
 }
 
+/** `?backend=wasm` forces the CPU path, so the fallback can be tried on purpose. */
+function forcedBackend(): 'wasm' | undefined {
+  return new URLSearchParams(window.location.search).get('backend') === 'wasm' ? 'wasm' : undefined;
+}
+
 export function initMessage(): MainToWorker {
   const base = import.meta.env.BASE_URL;
   const absolute = (path: string) => new URL(path, new URL(base, window.location.href)).href;
@@ -68,9 +73,12 @@ export function initMessage(): MainToWorker {
     import.meta.env.VITE_MODEL_URL ??
     (import.meta.env.DEV ? absolute('model/model.onnx') : RELEASE_MODEL_URL);
 
+  const force = forcedBackend();
+
   return {
     type: 'init',
     modelUrl,
+    ...(force ? { forceBackend: force } : {}),
     tokenizerBase: absolute('model/tokenizer/'),
     metaUrl: absolute('model/model-meta.json'),
     ortBase: absolute('ort/'),

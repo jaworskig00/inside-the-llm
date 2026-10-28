@@ -11,7 +11,8 @@ interface HeadGridProps {
   onSelect: (layer: number, head: number | null) => void;
 }
 
-const CELL = 46;
+const MIN_CELL = 46;
+const MAX_CELL = 104;
 const GAP = 3;
 const PAD_LEFT = 26;
 const PAD_TOP = 18;
@@ -29,8 +30,26 @@ const PAD_TOP = 18;
  */
 export function HeadGrid({ pack, selectedLayer, selectedHead, onSelect }: HeadGridProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const boxRef = useRef<HTMLDivElement | null>(null);
   const [hover, setHover] = useState<{ layer: number; head: number } | null>(null);
+  const [cell, setCell] = useState(MIN_CELL);
 
+  // The grid grows to fill the panel instead of sitting in the left third of a wide screen.
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return;
+    const measure = () => {
+      const available = box.clientWidth - PAD_LEFT - 2;
+      const fitted = Math.floor(available / pack.heads) - GAP;
+      setCell(Math.max(MIN_CELL, Math.min(MAX_CELL, fitted)));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [pack.heads]);
+
+  const CELL = cell;
   const width = PAD_LEFT + pack.heads * (CELL + GAP);
   const height = PAD_TOP + pack.layers * (CELL + GAP);
 
@@ -88,7 +107,7 @@ export function HeadGrid({ pack, selectedLayer, selectedHead, onSelect }: HeadGr
         }
       }
     }
-  }, [pack, selectedLayer, selectedHead, hover, width, height]);
+  }, [pack, selectedLayer, selectedHead, hover, width, height, CELL]);
 
   const locate = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -102,7 +121,7 @@ export function HeadGrid({ pack, selectedLayer, selectedHead, onSelect }: HeadGr
   };
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" ref={boxRef}>
       <canvas
         ref={canvasRef}
         style={{ width, height }}

@@ -78,7 +78,7 @@ async function init(message: Extract<MainToWorker, { type: 'init' }>): Promise<v
     label: 'Starting runtime',
     fromCache: cached,
   });
-  const backend = await engine.createSession(weights, message.ortBase);
+  const backend = await engine.createSession(weights, message.ortBase, message.forceBackend);
 
   // One throwaway pass: it compiles the WebGPU shaders so the first real token is not
   // ten times slower than every token after it.

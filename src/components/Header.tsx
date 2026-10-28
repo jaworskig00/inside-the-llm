@@ -34,11 +34,14 @@ export function Header() {
 
       <div className="flex flex-wrap items-center gap-2">
         {demoMode && (
-          <Badge tone="violet" title="Replaying a recorded run instead of downloading the weights">
+          <Badge
+            tone="violet"
+            title="Replaying a run that was recorded from the real model, so nothing is downloaded and nothing is computed here"
+          >
             recorded run
           </Badge>
         )}
-        {backend && (
+        {backend && !demoMode && (
           <Badge
             tone={backend === 'webgpu' ? 'accent' : 'neutral'}
             title={
@@ -55,7 +58,7 @@ export function Header() {
             cached
           </Badge>
         )}
-        {stats.loadMs > 0 && (
+        {stats.loadMs > 0 && !demoMode && (
           <Badge tone="neutral" title="Time from page load to a warmed-up session">
             ready in {ms(stats.loadMs)}
           </Badge>

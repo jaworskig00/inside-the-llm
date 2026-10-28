@@ -133,7 +133,9 @@ describe('buildLensSankey', () => {
       ]),
     ];
     const result = buildLensSankey(sparse, { maxCandidates: 2 });
-    expect(result.nodes.filter((node) => node.layer === 1).map((node) => node.tokenId)).toEqual([1]);
+    expect(result.nodes.filter((node) => node.layer === 1).map((node) => node.tokenId)).toEqual([
+      1,
+    ]);
     expect(result.nodes.every((node) => node.prob > 0)).toBe(true);
     // Mass still crosses the gap: " the" is rebuilt out of " to" surplus at layer 2.
     expect(layerOutflow(result, 1)).toBeCloseTo(1, 9);
@@ -144,7 +146,9 @@ describe('buildLensSankey', () => {
   it('uses at most |surplus| + |deficit| - 1 cross links per layer pair', () => {
     for (let index = 0; index + 1 < LAYERS.length; index += 1) {
       const here = data.nodes.filter((node) => node.layer === index);
-      const traded = data.links.filter((link) => !link.kept && link.source.startsWith(`L${index}:`));
+      const traded = data.links.filter(
+        (link) => !link.kept && link.source.startsWith(`L${index}:`),
+      );
       expect(traded.length).toBeLessThanOrEqual(here.length * 2 - 1);
     }
   });

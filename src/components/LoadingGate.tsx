@@ -17,6 +17,8 @@ export function LoadingGate() {
   const progress = useRunStore((state) => state.progress);
   const error = useRunStore((state) => state.error);
   const fatal = useRunStore((state) => state.fatal);
+  const gpuAvailable = useRunStore((state) => state.gpuAvailable);
+  const demoMode = useRunStore((state) => state.demoMode);
 
   if (phase === 'ready' && !fatal) return null;
 
@@ -96,6 +98,18 @@ export function LoadingGate() {
                 );
               })}
             </ol>
+
+            {!gpuAvailable && !demoMode && (
+              <p className="mt-4 text-[12px] leading-relaxed text-amber">
+                This browser exposes no WebGPU adapter, so inference falls back to WebAssembly on
+                the CPU. GitHub Pages cannot send the headers that would let it use more than one
+                thread, and building the session single-threaded takes several minutes.{' '}
+                <a className="underline" href="?demo=1">
+                  Open the recorded run instead
+                </a>{' '}
+                — same interface, same model output, nothing to download.
+              </p>
+            )}
 
             {error && !fatal && <p className="mt-4 text-[12px] text-amber">{error}</p>}
           </>
