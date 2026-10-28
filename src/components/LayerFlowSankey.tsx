@@ -95,8 +95,10 @@ export function LayerFlowSankey() {
       .duration(DURATION)
       .attr('d', path)
       .attr('stroke-width', (d) => Math.max(1, d.width ?? 0))
-      .attr('stroke-opacity', (d) => (d.kept ? 0.42 : 0.72))
-      .attr('stroke-dasharray', (d) => (d.kept ? null : '5 3'));
+      // Traded ribbons are the ones that slope from one candidate to another, which the
+      // geometry already shows; a dash pattern on a thick near-horizontal ribbon just reads
+      // as a barcode, so they are separated by weight instead.
+      .attr('stroke-opacity', (d) => (d.kept ? 0.5 : 0.22));
 
     root
       .select<SVGGElement>('g.nodes')
@@ -188,9 +190,10 @@ export function LayerFlowSankey() {
     >
       <svg ref={svgRef} className="w-full" role="img" aria-label="Logit lens flow across layers" />
       <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
-        Widths are shares of the five strongest candidates (together {percent(finalCoverage)} of the
-        real distribution at the output layer), renormalised per layer so every column sums to one.
-        Dashed ribbons are mass moving between candidates.
+        Widths are shares of the five strongest candidates (together {percent(finalCoverage)} of
+        the real distribution at the output layer), renormalised per layer so every column sums
+        to one. A ribbon that runs flat is a candidate holding its mass; a ribbon that slopes
+        across is mass moving to a different word.
       </p>
     </Panel>
   );

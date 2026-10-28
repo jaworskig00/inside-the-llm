@@ -5,10 +5,10 @@
  * They have to come from our own origin: a Web Worker cannot reach ORT's default CDN path,
  * and pinning them locally means the deployed app never depends on a third party being up.
  *
- * Only four files are copied, not the 26 that ship in the package. The WebGPU runtime needs
- * the JSEP build (28 MB, ~7 MB over the wire); a machine without WebGPU gets the plain WASM
- * build instead (14 MB, ~4 MB), which is half the download for no loss of function. The
- * `.bundle.` entry points inline their own loader glue, so no extra `.mjs` is needed.
+ * Six files are copied, not the 26 that ship in the package: the two `.bundle.` entry points
+ * and the loader + binary each of them actually imports. The WebGPU runtime pulls the
+ * asyncify build (27 MB, ~7 MB over the wire); a machine with no GPU adapter gets the plain
+ * WASM build instead (14 MB, ~4 MB), which is half the download for no loss of function.
  *
  * Run by `npm run dev` and `npm run build`, so it can never drift from the installed
  * onnxruntime-web version.
@@ -22,9 +22,13 @@ const source = join(root, 'node_modules', 'onnxruntime-web', 'dist');
 const target = join(root, 'public', 'ort');
 
 const FILES = [
+  // WebGPU path
   'ort.webgpu.bundle.min.mjs',
+  'ort-wasm-simd-threaded.asyncify.mjs',
+  'ort-wasm-simd-threaded.asyncify.wasm',
+  // WASM-only path
   'ort.wasm.bundle.min.mjs',
-  'ort-wasm-simd-threaded.jsep.wasm',
+  'ort-wasm-simd-threaded.mjs',
   'ort-wasm-simd-threaded.wasm',
 ];
 

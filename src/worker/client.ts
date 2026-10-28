@@ -71,7 +71,7 @@ export function initMessage(): MainToWorker {
   return {
     type: 'init',
     modelUrl,
-    tokenizerBase: absolute('model/'),
+    tokenizerBase: absolute('model/tokenizer/'),
     metaUrl: absolute('model/model-meta.json'),
     ortBase: absolute('ort/'),
     cacheKey: CACHE_KEY,

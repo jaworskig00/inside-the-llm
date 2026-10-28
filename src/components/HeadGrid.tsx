@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AttentionPack } from '../lib/protocol';
+import { rgb } from 'd3';
 import { headMatrix, normalizeRows } from '../lib/attention';
 import { attentionColor } from '../lib/color';
 
@@ -138,10 +139,12 @@ const LUT = buildLut();
 function buildLut(): Uint8Array {
   const lut = new Uint8Array(256 * 3);
   for (let i = 0; i < 256; i += 1) {
-    const match = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(attentionColor(i / 255));
-    lut[i * 3] = match ? Number(match[1]) : 0;
-    lut[i * 3 + 1] = match ? Number(match[2]) : 0;
-    lut[i * 3 + 2] = match ? Number(match[3]) : 0;
+    // d3's interpolators return whatever string the scheme uses (hex for viridis), so the
+    // colour is parsed properly rather than pattern-matched.
+    const { r, g, b } = rgb(attentionColor(i / 255));
+    lut[i * 3] = r;
+    lut[i * 3 + 1] = g;
+    lut[i * 3 + 2] = b;
   }
   return lut;
 }

@@ -141,8 +141,8 @@ export class Engine {
     const useWebgpu = await webgpuAvailable();
 
     // Loaded as a plain URL so the bundler never sees - and never copies - ORT's WASM set.
-    // The WebGPU runtime carries the JSEP kernels and is twice the size of the plain WASM
-    // one, so a machine without a GPU adapter is not made to download it.
+    // The WebGPU runtime is twice the size of the plain WASM one, so a machine without a
+    // GPU adapter is not made to download it.
     const entry = useWebgpu ? 'ort.webgpu.bundle.min.mjs' : 'ort.wasm.bundle.min.mjs';
     const ort = (await import(/* @vite-ignore */ `${prefix}${entry}`)) as OrtModule;
     this.ort = ort;

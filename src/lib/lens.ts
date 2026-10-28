@@ -9,9 +9,9 @@
  *
  *   1. Pick the candidate set U - the tokens that matter anywhere in the stack.
  *   2. At each layer, renormalise over U so every layer carries exactly 1.0 of mass.
- *   3. Between consecutive layers, a candidate keeps `min(p_l, p_next)` of its own mass,
- *      sheds any surplus, and the shed mass is distributed over the candidates that
- *      gained, in proportion to how much each gained.
+ *   3. Between consecutive layers, a candidate keeps `min(p_l, p_next)` of its own mass and
+ *      sheds any surplus; the shed mass is handed to the candidates that gained, matched up
+ *      by the north-west corner rule so the diagram stays sparse.
  *
  * Mass is conserved by construction (the surplus and the deficit both equal
  * `0.5 * L1(p_l, p_next)`), so the ribbon widths are honest and the crossings are the
@@ -99,12 +99,17 @@ export function buildLensSankey(
   const nodes: SankeyNodeInput[] = [];
   for (let layer = 0; layer < layers.length; layer += 1) {
     tokenOrder.forEach((tokenId, slot) => {
+      const prob = (matrix[layer] as number[])[slot] as number;
+      // A candidate that carries no probability at this layer gets no node. Keeping it
+      // would hand d3-sankey an isolated zero-value node, which it parks in the first
+      // column as a sliver and which squashes the real ribbons.
+      if (prob <= EPSILON) return;
       nodes.push({
         id: nodeId(layer, tokenId),
         layer,
         tokenId,
         text: labels.get(tokenId) ?? String(tokenId),
-        prob: (matrix[layer] as number[])[slot] as number,
+        prob,
       });
     });
   }
@@ -134,22 +139,32 @@ export function buildLensSankey(
       if (b - a > EPSILON) deficit.push({ slot, amount: b - a });
     });
 
-    const deficitTotal = deficit.reduce((sum, d) => sum + d.amount, 0);
-    if (deficitTotal <= EPSILON) continue;
+    // North-west corner rule: walk the shed and the gained side in step, settling whichever
+    // runs out first. It produces the same marginals as a proportional split with at most
+    // |surplus| + |deficit| - 1 ribbons instead of |surplus| * |deficit| - the difference
+    // between a readable diagram and a barcode.
+    let from = 0;
+    let to = 0;
+    while (from < surplus.length && to < deficit.length) {
+      const source = surplus[from] as { slot: number; amount: number };
+      const target = deficit[to] as { slot: number; amount: number };
+      const value = Math.min(source.amount, target.amount);
 
-    for (const from of surplus) {
-      for (const to of deficit) {
-        const value = (from.amount * to.amount) / deficitTotal;
-        if (value <= EPSILON) continue;
-        const fromToken = tokenOrder[from.slot] as number;
+      if (value > EPSILON) {
+        const fromToken = tokenOrder[source.slot] as number;
         links.push({
           source: nodeId(layer, fromToken),
-          target: nodeId(layer + 1, tokenOrder[to.slot] as number),
+          target: nodeId(layer + 1, tokenOrder[target.slot] as number),
           value,
           kept: false,
           tokenId: fromToken,
         });
       }
+
+      source.amount -= value;
+      target.amount -= value;
+      if (source.amount <= EPSILON) from += 1;
+      if (target.amount <= EPSILON) to += 1;
     }
   }
 

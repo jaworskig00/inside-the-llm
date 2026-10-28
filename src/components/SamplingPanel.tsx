@@ -3,7 +3,7 @@ import { Panel, Empty, Stat } from './Panel';
 import { ProbabilityBars } from './ProbabilityBars';
 import { useRunStore, selectCurrentStep } from '../store/useRunStore';
 import { entropyBits } from '../lib/sampling';
-import { fixed, percent } from '../lib/format';
+import { displayToken, fixed, percent } from '../lib/format';
 import type { SamplingConfig } from '../lib/protocol';
 
 interface SamplingPanelProps {
@@ -86,7 +86,8 @@ export function SamplingPanel({ onRescore }: SamplingPanelProps) {
             <ProbabilityBars raw={step.rawTop} shaped={step.shapedTop} chosenId={step.chosen.id} />
             <p className="text-[11px] text-ink-faint">
               The model picked{' '}
-              <span className="font-mono text-amber">{step.chosen.text || '␣'}</span> at{' '}
+              <span className="font-mono text-amber">{displayToken(step.chosen.text) || '␣'}</span>{' '}
+              at{' '}
               {percent(step.chosen.prob, 2)}. Changing the dials here reshapes the chart but does
               not rewrite history — press Generate to sample a new run.
             </p>

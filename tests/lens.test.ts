@@ -118,6 +118,37 @@ describe('buildLensSankey', () => {
     expect(result.links[0]?.value).toBeCloseTo(1, 9);
   });
 
+  // d3-sankey parks an isolated zero-value node in the first column as a sliver, which
+  // both looks broken and squashes the real ribbons, so those nodes must not be emitted.
+  it('omits a candidate at layers where it carries no probability', () => {
+    const sparse = [
+      layer(0, [
+        [1, ' to', 0.5],
+        [2, ' the', 0.2],
+      ]),
+      layer(1, [[1, ' to', 0.5]]),
+      layer(2, [
+        [1, ' to', 0.2],
+        [2, ' the', 0.5],
+      ]),
+    ];
+    const result = buildLensSankey(sparse, { maxCandidates: 2 });
+    expect(result.nodes.filter((node) => node.layer === 1).map((node) => node.tokenId)).toEqual([1]);
+    expect(result.nodes.every((node) => node.prob > 0)).toBe(true);
+    // Mass still crosses the gap: " the" is rebuilt out of " to" surplus at layer 2.
+    expect(layerOutflow(result, 1)).toBeCloseTo(1, 9);
+    expect(layerInflow(result, 2)).toBeCloseTo(1, 9);
+  });
+
+  // The sparse matching is what keeps the diagram readable, so it is pinned down here.
+  it('uses at most |surplus| + |deficit| - 1 cross links per layer pair', () => {
+    for (let index = 0; index + 1 < LAYERS.length; index += 1) {
+      const here = data.nodes.filter((node) => node.layer === index);
+      const traded = data.links.filter((link) => !link.kept && link.source.startsWith(`L${index}:`));
+      expect(traded.length).toBeLessThanOrEqual(here.length * 2 - 1);
+    }
+  });
+
   it('degrades gracefully on empty input', () => {
     expect(buildLensSankey([])).toEqual({ nodes: [], links: [], tokenOrder: [], coverage: [] });
   });

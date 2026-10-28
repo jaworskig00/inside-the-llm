@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { interpolateMagma, scaleSequential } from 'd3';
+import { interpolateMagma, scaleSequentialLog } from 'd3';
 import { Panel, Empty } from './Panel';
 import { useRunStore, selectCurrentStep } from '../store/useRunStore';
 import { displayToken, fixed } from '../lib/format';
 
-const CELL_H = 13;
-const LABEL_W = 34;
+const CELL_H = 20;
+const LABEL_W = 36;
 
 /**
  * The residual stream, as magnitude only.
@@ -24,11 +24,21 @@ export function ResidualStrip() {
 
   const grid = step?.hiddenNorms ?? null;
 
-  const { color, max } = useMemo(() => {
-    if (!grid) return { color: null, max: 0 };
+  // Log scale on purpose: the output layer's norms are two orders of magnitude above the
+  // embedding's, so a linear ramp paints everything below the last row flat black and
+  // hides the within-layer variation, which is the interesting part.
+  const { color, max, min } = useMemo(() => {
+    if (!grid) return { color: null, max: 0, min: 0 };
     let hi = 0;
-    for (const row of grid) for (const value of row) if (value > hi) hi = value;
-    return { color: scaleSequential(interpolateMagma).domain([0, hi]), max: hi };
+    let lo = Infinity;
+    for (const row of grid) {
+      for (const value of row) {
+        if (value > hi) hi = value;
+        if (value > 0 && value < lo) lo = value;
+      }
+    }
+    if (!Number.isFinite(lo) || lo <= 0) lo = 1;
+    return { color: scaleSequentialLog(interpolateMagma).domain([lo, Math.max(hi, lo * 1.01)]), max: hi, min: lo };
   }, [grid]);
 
   if (!grid || !color) {
@@ -44,7 +54,7 @@ export function ResidualStrip() {
   }
 
   const count = grid[0]?.length ?? 0;
-  const cellW = Math.max(6, Math.min(18, Math.floor(620 / Math.max(count, 1))));
+  const cellW = Math.max(10, Math.min(26, Math.floor(640 / Math.max(count, 1))));
   const width = LABEL_W + count * cellW;
   const height = grid.length * CELL_H;
 
@@ -65,10 +75,10 @@ export function ResidualStrip() {
           {grid.map((row, layer) => (
             <g key={layer} transform={`translate(0,${layer * CELL_H})`}>
               <text
-                x={LABEL_W - 6}
+                x={LABEL_W - 7}
                 y={CELL_H / 2 + 3}
                 textAnchor="end"
-                fontSize={8.5}
+                fontSize={9.5}
                 fill="var(--color-ink-faint)"
                 fontFamily="var(--font-mono)"
               >
@@ -96,8 +106,12 @@ export function ResidualStrip() {
           ))}
         </svg>
       </div>
-      <p className="mt-2 text-[11px] text-ink-faint tabular">
-        peak ‖h‖ = {fixed(max, 1)} · bottom row is the output layer
+      <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
+        <span className="tabular">
+          ‖h‖ ranges from {fixed(min, 1)} to {fixed(max, 1)}
+        </span>{' '}
+        across the whole grid, so the colour ramp is logarithmic — a linear one would paint
+        everything but the output row black. The bottom row is the output layer.
       </p>
     </Panel>
   );

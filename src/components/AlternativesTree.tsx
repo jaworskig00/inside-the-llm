@@ -12,8 +12,10 @@ interface AlternativesTreeProps {
   onFork: (path: number[]) => void;
 }
 
-const MARGIN = { top: 16, right: 130, bottom: 16, left: 86 };
-const ROW = 30;
+const MARGIN = { top: 16, right: 110, bottom: 16, left: 86 };
+const ROW = 34;
+/** Fixed horizontal distance between depths, so one open branch does not span the panel. */
+const COLUMN = 132;
 const DURATION = 360;
 
 /**
@@ -48,17 +50,28 @@ export function AlternativesTree({ onExpand, onFork }: AlternativesTreeProps) {
     const svg = svgRef.current;
     if (!svg || !hasRun) return;
 
-    const leaves = Math.max(1, root.leaves().length);
-    const height = Math.max(160, leaves * ROW + MARGIN.top + MARGIN.bottom);
-    const width = Math.max(380, svg.clientWidth || 560);
+    // nodeSize rather than size: the tree grows to fit its content instead of being
+    // stretched across the panel, so a single open branch does not draw 400 px of empty link.
+    const positioned = d3tree<TreeNode>().nodeSize([ROW, COLUMN])(root);
 
-    const layout = d3tree<TreeNode>().size([
-      height - MARGIN.top - MARGIN.bottom,
-      width - MARGIN.left - MARGIN.right,
-    ]);
-    const positioned = layout(root);
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let maxY = 0;
+    positioned.each((node) => {
+      if (node.x < minX) minX = node.x;
+      if (node.x > maxX) maxX = node.x;
+      if (node.y > maxY) maxY = node.y;
+    });
 
-    const container = select(svg).attr('viewBox', `0 0 ${width} ${height}`).attr('height', height);
+    const height = Math.max(150, maxX - minX + MARGIN.top + MARGIN.bottom + ROW);
+    const width = Math.max(380, maxY + MARGIN.left + MARGIN.right);
+
+    const container = select(svg)
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('height', height)
+      // Left-align: the default centres the viewBox inside the full-width element, which
+      // would float a shallow tree in the middle of the panel.
+      .attr('preserveAspectRatio', 'xMinYMid meet');
 
     let group = container.select<SVGGElement>('g.plot');
     if (group.empty()) {
@@ -66,7 +79,7 @@ export function AlternativesTree({ onExpand, onFork }: AlternativesTreeProps) {
       group.append('g').attr('class', 'links').attr('fill', 'none');
       group.append('g').attr('class', 'nodes');
     }
-    group.attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
+    group.attr('transform', `translate(${MARGIN.left},${MARGIN.top - minX + ROW / 2})`);
 
     const linkPath = linkHorizontal<HierarchyPointLink<TreeNode>, HierarchyPointNode<TreeNode>>()
       .x((d) => d.y)
