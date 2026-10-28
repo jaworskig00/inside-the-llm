@@ -19,12 +19,18 @@ export interface WorkerHandle {
 }
 
 /**
- * Where the weights live. `VITE_MODEL_URL` overrides it, which is how you would point the
- * app at a Hugging Face repo, an R2 bucket or your own server instead. In dev the Vite
- * middleware in `vite.config.ts` serves them from `.devmodel/`.
+ * The weights are served from this app's own origin at `<base>model/model.onnx`.
+ *
+ * They are not in git: the deploy workflow pulls them from the GitHub Release into `dist/`
+ * before publishing, and in dev the middleware in `vite.config.ts` serves them from
+ * `.devmodel/`. Same-origin matters - GitHub's release CDN sends no
+ * `access-control-allow-origin`, so fetching an asset straight from a release is blocked
+ * by CORS in the browser.
+ *
+ * `VITE_MODEL_URL` overrides the location, which is how you would point the app at a
+ * Hugging Face repo, an R2 bucket or your own server. The only requirement is CORS.
  */
-const RELEASE_MODEL_URL =
-  'https://github.com/jaworskig00/inside-the-llm/releases/download/model-v1/model.onnx';
+const DEFAULT_MODEL_PATH = 'model/model.onnx';
 
 /** Bumped whenever the exported graph changes, so stale weights are never reused. */
 const CACHE_KEY = 'inside-the-llm-model-v1';
@@ -69,9 +75,7 @@ function forcedBackend(): 'wasm' | undefined {
 export function initMessage(): MainToWorker {
   const base = import.meta.env.BASE_URL;
   const absolute = (path: string) => new URL(path, new URL(base, window.location.href)).href;
-  const modelUrl =
-    import.meta.env.VITE_MODEL_URL ??
-    (import.meta.env.DEV ? absolute('model/model.onnx') : RELEASE_MODEL_URL);
+  const modelUrl = import.meta.env.VITE_MODEL_URL ?? absolute(DEFAULT_MODEL_PATH);
 
   const force = forcedBackend();
 

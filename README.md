@@ -205,16 +205,22 @@ python scripts/export_model.py --out .devmodel     # ~3 min, writes model.onnx (
 
 ## Hosting
 
-**The weights.** `model.onnx` is published as a GitHub Release asset rather than committed:
-an 89 MB binary has no business in git history, and GitHub's release CDN answers with
-`access-control-allow-origin: *`, so a Web Worker can fetch it.
+**The weights.** `model.onnx` is published as a GitHub Release asset rather than committed —
+an 89 MB binary has no business in git history — and the deploy workflow pulls it into
+`dist/model/` before publishing, so the browser fetches it **from the app's own origin**.
+
+That last part is not cosmetic. GitHub serves release assets with no
+`access-control-allow-origin` header, so fetching one directly from a page on
+`github.io` is blocked by CORS. Same-origin side-steps the question entirely, the blob
+still stays out of git history, and the release remains the canonical copy.
 
 ```bash
 ./scripts/publish_model.sh model-v1 .devmodel/model.onnx
 ```
 
 To host it anywhere else — a Hugging Face repo, an R2 bucket, your own server — set
-`VITE_MODEL_URL` at build time. The only requirement is CORS.
+`VITE_MODEL_URL` at build time. The only requirement is that the host sends CORS headers,
+which is exactly what GitHub Releases do not.
 
 **The app.** [`deploy.yml`](.github/workflows/deploy.yml) builds with
 `VITE_BASE=/<repo>/` and pushes `dist/` to GitHub Pages, then fetches the published URL and

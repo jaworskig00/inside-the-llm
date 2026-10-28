@@ -15,6 +15,11 @@ jobs:
     name: lint · typecheck · test · build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      # onnxruntime-node's postinstall downloads CUDA execution-provider binaries from NuGet
+      # on Linux, which fails on a plain runner. CI never runs it - it is only used locally
+      # by scripts/record_fixture.mjs - so the non-bundled downloads are skipped.
+      ONNXRUNTIME_NODE_INSTALL: skip
 
     steps:
       - uses: actions/checkout@v4

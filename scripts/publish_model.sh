@@ -2,9 +2,10 @@
 #
 # Publishes the exported weights as a GitHub Release asset.
 #
-# The app downloads model.onnx from a release rather than from the repository: an 89 MB
-# binary has no business in git history, and GitHub's release CDN answers with
-# `access-control-allow-origin: *`, so a Web Worker on github.io can fetch it.
+# The release is where the weights live, because an 89 MB binary has no business in git
+# history. The browser never fetches from here: GitHub serves release assets with no
+# `access-control-allow-origin` header, so a cross-origin fetch is blocked. The deploy
+# workflow downloads the asset into dist/ instead, and the app reads it same-origin.
 #
 #   ./scripts/publish_model.sh [tag] [path/to/model.onnx]
 #
@@ -41,5 +42,4 @@ echo
 echo "asset URL:"
 echo "  https://github.com/$REPO/releases/download/$TAG/$(basename "$MODEL")"
 echo
-echo "Check CORS before trusting it:"
-echo "  curl -sIL -H 'Origin: https://example.github.io' <asset URL> | grep -i access-control"
+echo "The deploy workflow pulls this into dist/model/ before publishing to Pages."

@@ -11,6 +11,10 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  # The release that holds model.onnx. Bump it when the exported graph changes.
+  MODEL_TAG: model-v1
+
 permissions:
   contents: read
   pages: write
@@ -20,6 +24,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      # onnxruntime-node's postinstall downloads CUDA execution-provider binaries from NuGet
+      # on Linux, which fails on a plain runner. CI never runs it - it is only used locally
+      # by scripts/record_fixture.mjs - so the non-bundled downloads are skipped.
+      ONNXRUNTIME_NODE_INSTALL: skip
     steps:
       - uses: actions/checkout@v4
 
@@ -38,7 +47,23 @@ jobs:
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
 
+      # enablement: true turns Pages on through the API the first time this runs, so the
+      # repository needs no manual Settings visit.
+      # The 89 MB weights are not in git. They come from the GitHub Release and are placed
+      # inside dist/ so the deployed app fetches them from its own origin: release assets are
+      # served without an `access-control-allow-origin` header, so fetching one from a browser
+      # on another origin is blocked by CORS. Publish them with scripts/publish_model.sh.
+      - name: Fetch the model weights from the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist/model
+          gh release download "$MODEL_TAG" --repo "$GITHUB_REPOSITORY" --pattern model.onnx --dir dist/model --clobber
+          ls -l dist/model/model.onnx
+
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:

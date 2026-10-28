@@ -112,6 +112,22 @@ The worker fetches it with a streaming reader for progress, then stores it in th
 API** so a second visit starts instantly. `VITE_MODEL_URL` overrides the location, which is
 how you would point the app at a Hugging Face repo, R2 bucket or your own server instead.
 
+**Correction, after the first deploy.** The plan was for the browser to fetch the release
+asset directly. It cannot: GitHub serves release assets with **no
+`access-control-allow-origin` header at all**, so a `fetch()` from the Pages origin is
+blocked by CORS. Verified rather than assumed, after the fact:
+
+```
+$ curl -sIL -H 'Origin: https://jaworskig00.github.io' <asset url> | grep -i access-control
+(nothing)
+```
+
+The fix keeps every property the release-asset plan had: the deploy workflow downloads the
+asset into `dist/model/` before publishing, so the browser fetches the weights **from the
+app's own origin** and CORS never enters into it. The blob still never touches git history,
+and the release stays the canonical copy. Hosting elsewhere via `VITE_MODEL_URL` still works
+— the requirement is simply that the host sends CORS headers.
+
 ---
 
 ## 2026-10-28 — Canvas for the head grid, SVG for everything else
