@@ -1,0 +1,50 @@
+{
+  "modelId": "distilgpt2",
+  "numLayers": 6,
+  "numHeads": 12,
+  "hiddenSize": 768,
+  "vocabSize": 50257,
+  "maxPositions": 1024,
+  "lensTopK": 10,
+  "opset": 17,
+  "outputs": [
+    "logits",
+    "attentions",
+    "hidden_norms",
+    "token_logprobs",
+    "lens_values",
+    "lens_indices"
+  ],
+  "shapes": {
+    "logits": [
+      1,
+      50257
+    ],
+    "attentions": [
+      1,
+      6,
+      12,
+      5,
+      5
+    ],
+    "hidden_norms": [
+      1,
+      7,
+      5
+    ],
+    "token_logprobs": [
+      1,
+      5
+    ],
+    "lens_values": [
+      1,
+      7,
+      10
+    ],
+    "lens_indices": [
+      1,
+      7,
+      10
+    ]
+  }
+}

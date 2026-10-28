@@ -1,0 +1,7 @@
+dist
+coverage
+pnpm-lock.yaml
+public/model
+e2e/fixtures
+playwright-report
+test-results

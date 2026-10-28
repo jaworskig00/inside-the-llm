@@ -1,0 +1,41 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+dist-ssr/
+*.local
+
+# model weights are published as a GitHub Release asset, never committed
+public/model/*.onnx
+public/model/*.onnx_data
+public/model/verify.json
+
+# test artifacts
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# editors / os
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.swp
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+*.log
+
+# python export env
+.venv/
+__pycache__/
+*.pyc
