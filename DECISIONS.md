@@ -297,26 +297,29 @@ Everything in the brief is built and verified by running it, not by assuming:
   and a per-layer logit lens, quantised to **89 MB**, verified before any UI existed.
 - All six views, linked to one selected step and token, with keyboard playback (`←` `→`,
   space), ARIA labels, a colour-vision-safe palette and reduced-motion support.
-- **68 unit tests** over the sampling maths, attention indexing and normalisation, the
-  Sankey transport plan and the tree reducer; **8 Playwright tests** against the recorded
-  run.
+- A six-step first-run walkthrough that runs the model for the visitor before it explains
+  anything, replayable from the header.
+- Cross-origin isolation through a service worker, which is what makes the WASM fallback
+  usable on a host that cannot send COOP/COEP headers.
+- **70 unit tests** over the sampling maths, attention indexing and normalisation, the
+  Sankey transport plan, the byte-level token decoder and the tree reducer; **12 Playwright
+  tests** against the recorded run.
 - CI runs lint, format, typecheck, unit tests, e2e and build. Deploy publishes to GitHub
   Pages and then fetches the live URL, failing if it does not serve the app.
+- Published and live: the repository, the `model-v1` release holding the weights, and
+  <https://jaworskig00.github.io/inside-the-llm/>, audited in the browser after deployment
+  rather than assumed from a green build.
 
 ### Left undone
 
-- **Nothing is published yet.** Creating the public repository was blocked in the
-  environment this was built in, so the GitHub repo, the first push, the Release asset
-  (`./scripts/publish_model.sh`) and the Pages deployment still need to be run by hand. The
-  CI and deploy workflows are written and the deploy verifies the live URL itself, but
-  neither has executed.
-- The demo links in this README and the release URL in `src/worker/client.ts` assume
-  `jaworskig00/inside-the-llm`. They go live with the first deploy.
-- The COOP/COEP service worker described above, which would make the WASM fallback usable on
-  GitHub Pages.
 - Forking from a tree branch re-runs generation with the forked prefix treated as prompt, so
   those tokens lose their "generated" styling in the token strip. Correct output, slightly
   lossy provenance.
+- The attention grid is drawn for every head at every step, but nothing yet names the heads
+  it draws — see the next ideas.
+- No visual-regression testing. The e2e suite asserts structure and behaviour; a chart that
+  renders in the wrong colours would pass it. The deployed-site audit that caught exactly
+  that class of defect was done by hand.
 
 ### Next ideas
 

@@ -32,9 +32,27 @@ function devModelServer(): Plugin {
 // Swapping host (Cloudflare Pages, Hetzner, S3) is a one-line change here - see README.
 const base = process.env.VITE_BASE ?? '/inside-the-llm/';
 
+// Where the site is reachable from the outside. Only the link-preview tags need it: a
+// crawler fetching og:image has no page to resolve a relative path against, so those two
+// URLs must be absolute while every other asset stays relative to `base`.
+const siteUrl = (
+  process.env.VITE_SITE_URL ?? 'https://jaworskig00.github.io/inside-the-llm/'
+).replace(/\/*$/, '/');
+
+/** Fills the %SITE_URL% placeholders in index.html. */
+function absoluteSocialUrls(): Plugin {
+  return {
+    name: 'inside-the-llm:social-urls',
+    transformIndexHtml: {
+      order: 'pre',
+      handler: (html) => html.replaceAll('%SITE_URL%', siteUrl),
+    },
+  };
+}
+
 export default defineConfig({
   base,
-  plugins: [react(), tailwindcss(), devModelServer()],
+  plugins: [react(), tailwindcss(), devModelServer(), absoluteSocialUrls()],
   build: {
     target: 'esnext',
     sourcemap: true,

@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// 4173 is vite preview's default. It is overridable because a developer machine often has
+// another preview already on it, and a collision there should not look like a test failure.
+const port = Number(process.env.E2E_PORT ?? 4173);
+const baseURL = `http://127.0.0.1:${port}/inside-the-llm/`;
+
 /**
  * The e2e run never touches the model weights. It drives the app in `?demo=1` mode, where a
  * recorded run is replayed through the same worker protocol the real worker speaks — so the
@@ -14,7 +19,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : '50%',
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
   use: {
-    baseURL: 'http://127.0.0.1:4173/inside-the-llm/',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -22,8 +27,8 @@ export default defineConfig({
   webServer: {
     // --host 127.0.0.1: vite preview binds to `localhost` by default, which resolves to
     // ::1 on macOS and leaves the IPv4 address Playwright polls unanswered.
-    command: 'npm run build && npx vite preview --host 127.0.0.1 --port 4173 --strictPort',
-    url: 'http://127.0.0.1:4173/inside-the-llm/',
+    command: `npm run build && npx vite preview --host 127.0.0.1 --port ${port} --strictPort`,
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },

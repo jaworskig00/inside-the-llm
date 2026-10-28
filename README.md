@@ -47,9 +47,16 @@ Every view is linked to one selected step and one selected token, so stepping th
 run (`←` `→`, space to play) animates all of them together. **Explain mode** puts a
 plain-language sentence on each panel; it is on by default and toggles in the header.
 
-|                                                                  |                                                 |
-| ---------------------------------------------------------------- | ----------------------------------------------- |
-| ![Attention head grid and arc diagram](docs/media/attention.png) | ![Logit lens Sankey](docs/media/layer-flow.png) |
+A first-time visitor gets a six-step walkthrough instead of six panels of dense diagrams at
+once. Its first step runs the model for them, so there is something on screen before
+anything is explained; after that it spotlights one panel at a time. It is remembered per
+browser, replayable from **Walkthrough** in the header, and forced either way with
+`?tour=1` / `?tour=0`.
+
+|                                                                            |                                                      |
+| -------------------------------------------------------------------------- | ---------------------------------------------------- |
+| ![Attention head grid and arc diagram](docs/media/attention.png)           | ![Logit lens Sankey](docs/media/layer-flow.png)      |
+| ![The alternatives tree, expanded two levels](docs/media/alternatives.png) | ![The whole app mid-generation](docs/media/hero.png) |
 
 ---
 
@@ -159,8 +166,8 @@ variant Safari supports.
 **Bundle, after keeping ORT out of it.** onnxruntime-web ships ~55 MB of prebuilt WASM
 variants, and a bundler that follows its `new URL(..., import.meta.url)` calls emits every
 one of them. Loading the prebuilt ESM bundle from our own `public/ort/` at runtime instead
-leaves: app `275 kB` (87 kB gzipped), d3 `75 kB` (27 kB), worker `44 kB`, CSS `21 kB`
-(5 kB). The runtime itself is fetched on demand and sized to the machine — 27 MB for the
+leaves: app `283 kB` (90 kB gzipped), d3 `75 kB` (27 kB), worker `44 kB`, CSS `23 kB`
+(6 kB). The runtime itself is fetched on demand and sized to the machine — 27 MB for the
 WebGPU build, 14 MB for the plain WASM one, so a machine with no GPU adapter does not
 download the GPU runtime.
 

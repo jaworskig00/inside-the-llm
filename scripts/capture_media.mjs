@@ -13,6 +13,8 @@
  *   alternatives.png the expanded tree
  *   hero.gif        a short loop of the generation running (needs ffmpeg; skipped if absent)
  *
+ * It also writes public/og.png, the 1200x630 link preview, cropped from the same hero frame.
+ *
  * Usage: node scripts/capture_media.mjs
  */
 import { spawn } from 'node:child_process';
@@ -112,6 +114,23 @@ if (await hasFfmpeg()) {
   ]);
 } else {
   console.warn('[media] ffmpeg not found — skipping hero.gif, the stills are still written');
+}
+
+// --- the link preview -------------------------------------------------------------------
+// og:image is read at 1200x630 by every crawler that renders a link card, so the hero frame
+// is cropped to that aspect rather than letterboxed by whoever is showing it.
+if (await hasFfmpeg()) {
+  console.log('[media] og.png');
+  await run('ffmpeg', [
+    '-y',
+    '-loglevel',
+    'error',
+    '-i',
+    join(outDir, 'hero.png'),
+    '-vf',
+    'crop=in_w:in_w/1.9048,scale=1200:630:flags=lanczos',
+    join(root, 'public', 'og.png'),
+  ]);
 }
 
 await rm(framesDir, { recursive: true, force: true });

@@ -41,14 +41,15 @@ jobs:
 
       # VITE_BASE must match where the site is served from. For GitHub Pages that is
       # /<repo>/; for Cloudflare Pages, Netlify or your own server set it to "/".
-      # VITE_MODEL_URL points at the weights - see README "Hosting the model elsewhere".
+      # VITE_MODEL_URL points at the weights - see the "Hosting" section of the README.
       - name: Build
         run: npm run build
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
+          # Absolute, because og:image and og:url have to be: link previews are fetched by
+          # a crawler that has no page to resolve a relative path against.
+          VITE_SITE_URL: ${{ format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
 
-      # enablement: true turns Pages on through the API the first time this runs, so the
-      # repository needs no manual Settings visit.
       # The 89 MB weights are not in git. They come from the GitHub Release and are placed
       # inside dist/ so the deployed app fetches them from its own origin: release assets are
       # served without an `access-control-allow-origin` header, so fetching one from a browser
@@ -61,6 +62,10 @@ jobs:
           gh release download "$MODEL_TAG" --repo "$GITHUB_REPOSITORY" --pattern model.onnx --dir dist/model --clobber
           ls -l dist/model/model.onnx
 
+      # enablement: true only configures a site that already exists. It cannot create one:
+      # the default GITHUB_TOKEN gets "Resource not accessible by integration". Enable Pages
+      # once per repository before the first deploy, then this step is a no-op:
+      #   gh api -X POST repos/OWNER/REPO/pages -f build_type=workflow
       - uses: actions/configure-pages@v5
         with:
           enablement: true

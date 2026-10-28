@@ -5,6 +5,27 @@
   "type": "module",
   "description": "Watch a GPT-2 class language model think, step by step, entirely in your browser.",
   "license": "MIT",
+  "author": "Grzegorz Jaworski (https://gj-dev.com)",
+  "homepage": "https://jaworskig00.github.io/inside-the-llm/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaworskig00/inside-the-llm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jaworskig00/inside-the-llm/issues"
+  },
+  "keywords": [
+    "llm",
+    "transformer",
+    "gpt-2",
+    "onnxruntime-web",
+    "webgpu",
+    "d3",
+    "data-visualization",
+    "attention",
+    "logit-lens",
+    "react"
+  ],
   "engines": {
     "node": ">=22.12"
   },
