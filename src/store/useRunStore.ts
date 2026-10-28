@@ -70,6 +70,9 @@ export interface RunState {
   selectedHead: number | null;
   playing: boolean;
   explain: boolean;
+  /** The first-run walkthrough. Modal while open, so the keyboard shortcuts stand down. */
+  tourOpen: boolean;
+  tourStep: number;
 
   tree: TreeNode;
   /** requestId -> the path that request is expanding. */
@@ -85,6 +88,9 @@ export interface RunState {
   setSelectedHead: (head: number | null) => void;
   setPlaying: (playing: boolean) => void;
   toggleExplain: () => void;
+  startTour: () => void;
+  endTour: () => void;
+  goToTourStep: (step: number) => void;
   stepBy: (delta: number) => void;
   beginRun: () => number;
   requestExpansion: (path: number[]) => number | null;
@@ -121,6 +127,8 @@ export const useRunStore = create<RunState>((set, get) => ({
   selectedHead: null,
   playing: false,
   explain: true,
+  tourOpen: false,
+  tourStep: 0,
 
   tree: createRoot(0),
   pendingExpansions: {},
@@ -153,6 +161,10 @@ export const useRunStore = create<RunState>((set, get) => ({
   setSelectedHead: (head) => set({ selectedHead: head }),
   setPlaying: (playing) => set({ playing }),
   toggleExplain: () => set((state) => ({ explain: !state.explain })),
+  // Opening the tour stops playback: a moving target is a bad thing to point at.
+  startTour: () => set({ tourOpen: true, tourStep: 0, playing: false }),
+  endTour: () => set({ tourOpen: false }),
+  goToTourStep: (step) => set({ tourStep: Math.max(0, step) }),
 
   stepBy: (delta) => {
     const { selectedStep, steps } = get();

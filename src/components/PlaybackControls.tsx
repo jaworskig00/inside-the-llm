@@ -36,6 +36,9 @@ export function PlaybackControls() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      // The walkthrough is modal and uses the same arrow keys to move between its steps.
+      if (useRunStore.getState().tourOpen) return;
+
       const target = event.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
 
@@ -67,6 +70,7 @@ export function PlaybackControls() {
       className="panel flex flex-wrap items-center gap-3 px-4 py-3"
       role="group"
       aria-label="Playback"
+      data-tour="playback"
     >
       <button
         type="button"

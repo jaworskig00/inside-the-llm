@@ -8,7 +8,9 @@ import { expect, test, type Page } from '@playwright/test';
  * covering the worker boundary, the store, and every view's reaction to a selection change.
  */
 
-const DEMO = '?demo=1';
+// tour=0 keeps the first-run walkthrough out of the way; it is modal, and it has its own
+// tests below that opt into it explicitly.
+const DEMO = '?demo=1&tour=0';
 
 async function generate(page: Page) {
   await page.goto(DEMO);
@@ -164,6 +166,46 @@ test('charts redraw at the size they are displayed at after a resize', async ({ 
       )
       .toBeLessThan(24);
   }
+});
+
+test.describe('the first-run walkthrough', () => {
+  test('opens by itself, runs the model for you, and remembers it was seen', async ({ page }) => {
+    await page.goto('?demo=1&tour=1');
+
+    const card = page.getByRole('dialog');
+    await expect(card).toBeVisible({ timeout: 30_000 });
+    await expect(card.getByText('1 of 6')).toBeVisible();
+
+    // The first step does the work for the visitor instead of leaving them to find Generate.
+    await card.getByRole('button', { name: /Run it for me/ }).click();
+    await expect(card.getByText('2 of 6')).toBeVisible();
+    await expect(page.getByText('step 12 / 12')).toBeVisible({ timeout: 30_000 });
+
+    // Arrows move between steps; the playback shortcuts stand down while it is open.
+    for (let i = 0; i < 4; i += 1) await page.keyboard.press('ArrowRight');
+    await expect(card.getByText('6 of 6')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Pause playback/ })).toHaveCount(0);
+
+    await card.getByRole('button', { name: 'Start exploring' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    // Second visit, with no tour flag at all: it must stay shut on its own.
+    await page.goto('?demo=1');
+    await expect(page.getByRole('button', { name: 'Generate' })).toBeEnabled({ timeout: 30_000 });
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('stays shut with ?tour=0, and can be reopened from the header', async ({ page }) => {
+    await page.goto(DEMO);
+    await expect(page.getByRole('button', { name: 'Generate' })).toBeEnabled({ timeout: 30_000 });
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Walkthrough' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
 });
 
 test('explain mode can be turned off', async ({ page }) => {

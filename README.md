@@ -209,6 +209,7 @@ python scripts/export_model.py --out .devmodel     # ~3 min, writes model.onnx (
 | --------------------- | ------------------------------------------------------- |
 | `?demo=1` / `?demo=0` | force the recorded run on or off (phones default to on) |
 | `?backend=wasm`       | pin the CPU path, to see the fallback on purpose        |
+| `?tour=1` / `?tour=0` | force the walkthrough open or keep it shut              |
 
 ---
 

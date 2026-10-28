@@ -23,6 +23,8 @@ export function Panel({ title, explain, aside, children, className = '', id }: P
     <section
       className={`panel flex min-w-0 flex-col ${className}`}
       aria-labelledby={id && `${id}-title`}
+      // The guided tour anchors its spotlight to these.
+      data-tour={id}
     >
       <header className="flex items-start justify-between gap-3 border-b border-edge px-4 py-3">
         <div className="min-w-0">

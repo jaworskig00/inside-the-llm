@@ -15,6 +15,7 @@ export function Header() {
   const demoMode = useRunStore((state) => state.demoMode);
   const explain = useRunStore((state) => state.explain);
   const toggleExplain = useRunStore((state) => state.toggleExplain);
+  const startTour = useRunStore((state) => state.startTour);
 
   return (
     <header className="flex flex-wrap items-end justify-between gap-4 border-b border-edge px-5 py-4">
@@ -72,6 +73,10 @@ export function Header() {
           title="Show or hide the plain-language caption on every panel"
         >
           {explain ? 'Explain: on' : 'Explain: off'}
+        </button>
+
+        <button type="button" className="btn" onClick={startTour} title="Replay the walkthrough">
+          Walkthrough
         </button>
 
         <a className="btn" href={REPO_URL} target="_blank" rel="noreferrer noopener">

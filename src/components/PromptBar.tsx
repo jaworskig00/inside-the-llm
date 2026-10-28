@@ -19,7 +19,7 @@ export function PromptBar({ onGenerate, onCancel }: PromptBarProps) {
   const ready = phase === 'ready';
 
   return (
-    <div className="panel grid gap-3 p-4">
+    <div className="panel grid gap-3 p-4" data-tour="prompt">
       <div className="flex flex-wrap items-center gap-2">
         <span className="label">presets</span>
         {PRESET_PROMPTS.map((preset) => (

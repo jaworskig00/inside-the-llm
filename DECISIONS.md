@@ -268,6 +268,27 @@ width can carry.
 
 ---
 
+## 2026-10-28 — Onboarding: show, then explain
+
+Six dense panels and a prompt box is a lot to land on. The walkthrough spotlights one panel
+at a time with a sentence of context, and its first step has a **"Run it for me"** button
+that starts a generation and moves on — so the model has already said something before the
+explaining starts, instead of asking the visitor to find the right control first.
+
+Hand-rolled rather than a tour library: it is one overlay, one measured rectangle and a
+card, and any dependency would have outweighed it. Two details earned their keep. The
+spotlight is a single div with a 9999px box-shadow, which dims everything outside the
+rectangle in one paint and needs no SVG mask. And the card is pinned to the bottom of the
+viewport when the target is taller than the screen — the attention grid always is, and
+dropping the card at the top would cover exactly the thing being described.
+
+It is modal, so the playback shortcuts stand down while it is open; the arrow keys belong to
+the tour then. That turned up in the test suite immediately: adding the walkthrough broke
+eight existing tests, because every one of them lands on a fresh profile where the tour
+opens over the UI. They now carry `?tour=0`, and the walkthrough has its own tests.
+
+---
+
 ## Final state
 
 Everything in the brief is built and verified by running it, not by assuming:

@@ -8,6 +8,7 @@ import { AlternativesTree } from './components/AlternativesTree';
 import { LayerFlowSankey } from './components/LayerFlowSankey';
 import { ResidualStrip } from './components/ResidualStrip';
 import { LoadingGate } from './components/LoadingGate';
+import { Tour } from './components/Tour';
 import { MobileNotice } from './components/MobileNotice';
 import { useInference } from './hooks/useInference';
 import { useRunStore } from './store/useRunStore';
@@ -21,6 +22,7 @@ export default function App() {
   return (
     <div className="min-h-full">
       <LoadingGate />
+      <Tour onGenerate={generate} />
 
       <a
         href="#tokens-title"
