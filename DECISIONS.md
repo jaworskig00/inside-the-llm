@@ -187,7 +187,44 @@ Written down because each one was invisible in review and obvious in the browser
 
 ---
 
-## 2026-10-28 — WebGPU is the deployed default, and it is not the fastest option
+## 2026-10-28 — Auditing the deployed site, and a measurement I got wrong
+
+Everything above was verified on a dev server. Driving the published site instead turned up
+five defects, and one lesson about how I had been measuring.
+
+**What was actually broken.** Charts never redrew after a window resize — they wrote their
+width into the SVG `viewBox` at draw time, so the browser went on scaling stale geometry and
+text came out stretched. Space both activated a focused control and toggled playback, two
+actions from one key. The output readout printed mojibake for anything outside ASCII,
+because byte-level BPE stores each byte as a printable codepoint and joining raw vocabulary
+entries shows `Ã³` where the text says `ó`. Tree nodes at the depth limit looked clickable
+and silently did nothing. And GitHub Pages cannot send COOP/COEP, so `SharedArrayBuffer`
+was absent, onnxruntime-web was pinned to one thread, and **building a WASM session never
+finished inside two minutes** — a browser without WebGPU got a progress bar that would not
+move. A service worker supplies the headers; session creation now takes 1.5 s.
+
+The resize fix has a detail worth keeping. `useElementWidth` takes a callback ref rather
+than a `useRef`, because a `useRef` is null on the first render and an effect keyed on the
+ref object never re-runs when the element appears later. That is why only the Sankey stayed
+stale after the first attempt: it is the one component that returns an empty state before it
+ever renders its `<svg>`.
+
+**The measurement I got wrong.** I first recorded the deployed site at 3.1 tok/s against
+14.5 locally and wrote it up as a five-fold penalty from the missing isolation. It was not.
+The live tab had been running for half an hour with dozens of generations behind it while
+the local one was fresh; measuring both in a single clean tab put them level. The same tab
+gives 17 tok/s on a fresh load and 5 tok/s after twenty minutes of use, with no code change
+in between — so throughput on this machine is not reproducible to better than about 3x, and
+any single headline figure is fiction. The README now reports ranges with the conditions
+attached, and the app shows live tok/s so a visitor sees their own number.
+
+The isolation fix stands on its own merit regardless: the single-threaded WASM start-up is a
+categorical failure, not a noisy ratio, and it is the one measurement here that is
+reproducible.
+
+---
+
+## 2026-10-28 — WebGPU is the deployed default
 
 Measured on an Apple M4 Pro in Chromium 152, prompt + 16 tokens at a 25-token context:
 
@@ -197,22 +234,19 @@ Measured on an Apple M4 Pro in Chromium 152, prompt + 16 tokens at a 25-token co
 | WASM, 4 threads | 0.85 s                       | 27.3 tok/s | 37 ms    |
 | WASM, 1 thread  | > 2 min to build the session | —          | —        |
 
-Threaded WASM wins, which is not the intuitive result: DistilGPT-2 at this context length is
-small enough that per-dispatch overhead and the CPU fallback for ops like `TopK` dominate,
-and Apple Silicon's SIMD path is strong. But threads need `SharedArrayBuffer`, which needs
-COOP/COEP response headers, which **GitHub Pages cannot send**. Single-threaded, session
-creation never finished inside two minutes of waiting — not a slow path, an unusable one.
+These were taken on a dev server and I no longer trust the ratio between them — see the
+audit entry above. What survived re-measurement on the deployed site is the ordering:
+WebGPU is the faster path here, and threaded WASM is a usable fallback at 4-5 tok/s.
 
-So: WebGPU is the primary path on the deployed build; `public/_headers` ships the isolation
-headers for hosts that honour them (Cloudflare Pages, Netlify), where WASM becomes the fast
-path; and a browser with no WebGPU adapter is **told** in the loading screen and offered the
-recorded run rather than left watching a progress bar that will not move. `?backend=wasm`
-pins the CPU path so the fallback can be tried deliberately.
+The reason WebGPU does not win by more is visible in ORT's own log: _"Some nodes were not
+assigned to the preferred execution providers... ORT explicitly assigns shape related ops to
+CPU"_. DistilGPT-2 at these context lengths is small enough that per-dispatch overhead and
+those CPU-side kernels take a real share of each step.
 
-The fix not taken: a COOP/COEP service worker (the `coi-serviceworker` pattern) would give
-cross-origin isolation on a static host. It was left out because `credentialless` is not
-supported in Safari, and getting it wrong would break the cross-origin model download for
-the browsers that currently work. Noted as the obvious next step.
+So: WebGPU is the primary path; the service worker gives the WASM fallback the threads it
+needs; `public/_headers` covers hosts that send the headers themselves (Cloudflare Pages,
+Netlify); and a browser with no WebGPU adapter is told so in the loading screen and offered
+the recorded run. `?backend=wasm` pins the CPU path so the fallback can be tried on purpose.
 
 ---
 

@@ -131,21 +131,30 @@ by the north-west corner rule. That produces at most `|surplus| + |deficit| - 1`
 instead of the full product — the difference between a readable diagram and a barcode — and
 mass conservation is asserted in the unit tests.
 
-**Measured on an Apple M4 Pro (12 cores) in Chromium 152** (prompt + 16 tokens, 25-token context):
+**Measured on an Apple M4 Pro (12 cores) in Chromium 152, against the deployed site**,
+prompt + 16 tokens:
 
-|                 | start-up (cached weights) | throughput   | per forward pass |
-| --------------- | ------------------------- | ------------ | ---------------- |
-| WebGPU          | 0.75 s                    | 17.9 tok/s   | 57 ms            |
-| WASM, 4 threads | 0.85 s                    | 27.3 tok/s   | 37 ms            |
-| WASM, 1 thread  | **> 2 min**               | not measured | —                |
+|                                                | start-up, weights cached            | throughput   |
+| ---------------------------------------------- | ----------------------------------- | ------------ |
+| WebGPU                                         | 0.8 – 2.7 s                         | 5 – 17 tok/s |
+| WASM, 4 threads                                | 1.5 s                               | 4 – 5 tok/s  |
+| WASM, 1 thread (before cross-origin isolation) | **never finished inside 2 minutes** | —            |
 
-Two things worth saying out loud. Threaded WASM beats WebGPU on this workload: DistilGPT-2
-at a 25-token context is small enough that per-dispatch overhead and the CPU fallback for
-ops like `TopK` dominate, and Apple Silicon's SIMD path is strong. And threaded WASM needs
-`SharedArrayBuffer`, which needs COOP/COEP headers, which **GitHub Pages cannot send** — so
-the deployed build leans on WebGPU, and a browser without it is told plainly in the loading
-screen rather than left to wait. [`public/_headers`](public/_headers) is there for hosts
-that can send them (Cloudflare Pages, Netlify), where the WASM path becomes the fast one.
+Two honest caveats about that table. First, the throughput range is wide because it is: the
+same tab measured 17 tok/s on a fresh load and 5 tok/s twenty minutes and a dozen runs
+later, with no code change in between. A single headline number would be fiction, which is
+why the app shows live tok/s and per-pass milliseconds — the number that matters is the one
+on your machine. Second, the last row is not a slow path, it is a broken one, and fixing it
+is what [`public/coi-sw.js`](public/coi-sw.js) is for.
+
+**Cross-origin isolation on a host that cannot send headers.** onnxruntime-web needs
+`SharedArrayBuffer` for multi-threaded WASM, which needs COOP/COEP response headers, which
+GitHub Pages does not send. Single-threaded, building the inference session never completed
+— so every visitor without WebGPU got a progress bar that would not move. A service worker
+re-serves each response with the isolation headers and the page reloads once to pick them
+up; session creation drops to 1.5 s. `require-corp` rather than `credentialless`, because
+every asset here is same-origin, so there is nothing to relax and `require-corp` is the
+variant Safari supports.
 
 **Bundle, after keeping ORT out of it.** onnxruntime-web ships ~55 MB of prebuilt WASM
 variants, and a bundler that follows its `new URL(..., import.meta.url)` calls emits every
@@ -246,8 +255,13 @@ turns the WASM path into the fast one.
   France. That is the point — the mechanics are the subject here, not the output quality.
 - **No KV cache**, so the context is capped at 64 prompt tokens and 32 generated ones.
   Beyond that the quadratic re-read stops being free.
-- **Single-threaded WASM start-up is impractical** (see the table above). Browsers without
-  WebGPU are offered the recorded run instead of a silent two-minute wait.
+- **Throughput is not stable.** It varies by about 3x on the same machine depending on how
+  much the browser and GPU have already been asked to do. The live readout is the number to
+  trust, not the table.
+- **Cross-origin isolation depends on a service worker** on GitHub Pages. If it fails to
+  register — a browser that blocks service workers, a non-secure context — the app still
+  works, single-threaded, and a browser without WebGPU is offered the recorded run rather
+  than a progress bar that never moves.
 - **int8 quantisation** shifts probabilities slightly against the fp32 model. Attention rows
   still sum to 1 to within 1e-2, which the export script asserts.
 - **Single-token decoding** can show replacement characters for tokens that are a partial
