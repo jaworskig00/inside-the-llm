@@ -22,14 +22,14 @@ is no output node for it. So the off-the-shelf path was a dead end, as expected.
 weights) and `output_attentions=True, output_hidden_states=True`, then reduces everything
 to small, ready-to-plot tensors **inside the graph**:
 
-| output           | shape             | what the UI does with it                       |
-| ---------------- | ----------------- | ---------------------------------------------- |
-| `logits`         | `(1, V)`          | sampling + the live probability bar chart      |
-| `attentions`     | `(1, L, H, T, T)` | head-grid heatmaps and the arc diagram         |
-| `hidden_norms`   | `(1, L+1, T)`     | residual-stream magnitude strip                |
-| `token_logprobs` | `(1, T)`          | colours the prompt tokens by model surprise    |
-| `lens_values`    | `(1, L+1, K)`     | logit lens: top-k log-probs per layer          |
-| `lens_indices`   | `(1, L+1, K)`     | logit lens: top-k token ids per layer          |
+| output           | shape             | what the UI does with it                    |
+| ---------------- | ----------------- | ------------------------------------------- |
+| `logits`         | `(1, V)`          | sampling + the live probability bar chart   |
+| `attentions`     | `(1, L, H, T, T)` | head-grid heatmaps and the arc diagram      |
+| `hidden_norms`   | `(1, L+1, T)`     | residual-stream magnitude strip             |
+| `token_logprobs` | `(1, T)`          | colours the prompt tokens by model surprise |
+| `lens_values`    | `(1, L+1, K)`     | logit lens: top-k log-probs per layer       |
+| `lens_indices`   | `(1, L+1, K)`     | logit lens: top-k token ids per layer       |
 
 Doing the top-k reduction in the graph matters: the raw logit lens is
 `(L+1) x 50257` floats per step. Reduced to `K=10` it is 70 numbers, so the worker hands
@@ -61,12 +61,12 @@ attention weights and not something the exporter invented.
   quadratic, and for the sequence lengths this demo allows (prompt + 32 tokens) it costs
   a few milliseconds, while buying something valuable: the full `T x T` attention matrix
   at every step, with no cache-shape gymnastics. A cached export would only ever return
-  the last attention *row*, which kills the arc diagram.
+  the last attention _row_, which kills the arc diagram.
 - **The logit lens does not double-normalise.** HF's GPT-2 has already pushed
   `hidden_states[-1]` through `ln_f`, so the export applies `ln_f` to layers `0..L-1` and
   passes the last state through untouched. Getting this wrong makes the final layer's lens
   read-out subtly disagree with `logits`.
-- **int8 dynamic quantization over `MatMul` *and* `Gather`.** DistilGPT-2 is 82 M
+- **int8 dynamic quantization over `MatMul` _and_ `Gather`.** DistilGPT-2 is 82 M
   parameters, of which 38.6 M are the token embedding, which the LM head reuses (tied
   weights). Quantizing only `MatMul` leaves that embedding in fp32 and the download stays
   above 150 MB. Including `Gather` brings the whole model to **89 MB**, under the 100 MB

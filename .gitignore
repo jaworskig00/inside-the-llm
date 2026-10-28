@@ -39,3 +39,8 @@ logs/
 .venv/
 __pycache__/
 *.pyc
+public/ort/
+public/demo-run.json
+
+# local copy of the exported weights, served by the dev middleware
+.devmodel/

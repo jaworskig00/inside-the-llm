@@ -1,0 +1,188 @@
+@import 'tailwindcss';
+
+/*
+ * Dark, quiet, high-contrast — the chrome stays out of the way so the only saturated
+ * colour on screen belongs to data. Every value here is a token; nothing is hard-coded in
+ * a component.
+ */
+@theme {
+  --color-void: #08090c;
+  --color-panel: #0e1015;
+  --color-panel-2: #13161d;
+  --color-edge: #1f232e;
+  --color-edge-bright: #2b303d;
+  --color-ink: #e8eaf0;
+  --color-ink-dim: #9aa0b0;
+  --color-ink-faint: #666d7e;
+  --color-accent: #62b0ff;
+  --color-accent-dim: #2b6ca8;
+  --color-amber: #f0b429;
+  --color-violet: #a98bff;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-void);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  /* A visible, consistent focus ring everywhere — this app is meant to be keyboard-driven. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--color-accent-dim);
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-edge-bright);
+    border-radius: 99px;
+    border: 2px solid var(--color-void);
+  }
+}
+
+@layer components {
+  .panel {
+    background: var(--color-panel);
+    border: 1px solid var(--color-edge);
+    border-radius: 12px;
+  }
+
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1;
+    border-radius: 5px;
+    border: 1px solid transparent;
+    padding: 6px 7px;
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease,
+      border-color 120ms ease;
+  }
+
+  .chip:hover {
+    transform: translateY(-1px);
+  }
+
+  .chip-selected {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+  }
+
+  .label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+    font-weight: 600;
+  }
+
+  .btn {
+    border-radius: 8px;
+    border: 1px solid var(--color-edge-bright);
+    background: var(--color-panel-2);
+    color: var(--color-ink);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 12px;
+    transition:
+      background 120ms ease,
+      border-color 120ms ease,
+      opacity 120ms ease;
+  }
+
+  .btn:hover:not(:disabled) {
+    background: var(--color-edge);
+    border-color: var(--color-ink-faint);
+  }
+
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #05070b;
+    font-weight: 600;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: #7cc0ff;
+    border-color: #7cc0ff;
+  }
+
+  /* Slider styling has to be written twice; browsers do not share a pseudo-element. */
+  .slider {
+    appearance: none;
+    height: 4px;
+    border-radius: 99px;
+    background: var(--color-edge-bright);
+    width: 100%;
+  }
+
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    border: 2px solid var(--color-void);
+    cursor: grab;
+  }
+
+  .slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    border: 2px solid var(--color-void);
+    cursor: grab;
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Honour the OS setting: no transitions at all when the user asked for less motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

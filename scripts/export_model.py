@@ -45,8 +45,11 @@ class InsideGPT2(nn.Module):
         self.topk = topk
 
     def forward(self, input_ids: torch.Tensor):
+        # int32 at the graph boundary: onnxruntime-web's WebGPU execution provider has
+        # patchy int64 support, so the only int64 inside the graph is what GPT-2 itself needs.
+        ids = input_ids.to(torch.int64)
         out = self.m(
-            input_ids=input_ids,
+            input_ids=ids,
             output_attentions=True,
             output_hidden_states=True,
             use_cache=False,
@@ -58,7 +61,7 @@ class InsideGPT2(nn.Module):
         # Teacher-forced log-prob of every prompt token, so the token strip can colour
         # the prompt by "how surprising was this token to the model".
         shifted = torch.log_softmax(logits[:, :-1, :], dim=-1)  # (1, T-1, V)
-        target = input_ids[:, 1:].unsqueeze(-1)  # (1, T-1, 1)
+        target = ids[:, 1:].unsqueeze(-1)  # (1, T-1, 1)
         token_logprobs = torch.gather(shifted, -1, target).squeeze(-1)  # (1, T-1)
         pad = torch.zeros(1, 1, dtype=token_logprobs.dtype, device=token_logprobs.device)
         token_logprobs = torch.cat([pad, token_logprobs], dim=1)  # (1, T)
@@ -77,7 +80,14 @@ class InsideGPT2(nn.Module):
         lens_logprobs = torch.log_softmax(self.m.lm_head(torch.stack(lensed, dim=1)), dim=-1)
         lens_values, lens_indices = lens_logprobs.topk(self.topk, dim=-1)
 
-        return last_logits, attentions, hidden_norms, token_logprobs, lens_values, lens_indices
+        return (
+            last_logits,
+            attentions,
+            hidden_norms,
+            token_logprobs,
+            lens_values,
+            lens_indices.to(torch.int32),
+        )
 
 
 OUTPUT_NAMES = [
@@ -102,7 +112,7 @@ def export_fp32(out_dir: Path) -> Path:
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 
     wrapped = InsideGPT2(model).eval()
-    example = torch.tensor([[464, 3139, 286, 4881, 318]], dtype=torch.int64)
+    example = torch.tensor([[464, 3139, 286, 4881, 318]], dtype=torch.int32)
 
     with torch.no_grad():
         reference = wrapped(example)
@@ -174,7 +184,7 @@ def verify(model_path: Path, out_dir: Path) -> None:
 
     print(f"[4/4] verifying {model_path.name} with onnxruntime")
     session = ort.InferenceSession(str(model_path), providers=["CPUExecutionProvider"])
-    ids = np.array([[464, 3139, 286, 4881, 318]], dtype=np.int64)
+    ids = np.array([[464, 3139, 286, 4881, 318]], dtype=np.int32)
     result = session.run(None, {"input_ids": ids})
     named = dict(zip([o.name for o in session.get_outputs()], result))
 
